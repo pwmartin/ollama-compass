@@ -1,6 +1,6 @@
 # Ollama Hunter
 
-**Ollama Hunter** is a Python toolset that discovers, analyzes, and serves information about publicly exposed Ollama LLM instances. It uses Shodan to find hosts, stores the data in a local SQLite database, and can expose this data via a local API.
+**Ollama Hunter** is a Python toolset that discovers, analyzes, and serves information about publicly exposed Ollama LLM instances. It uses Shodan to find hosts, stores the data in a local SQLite database, and provides an interactive web interface to manage and view the data.
 
 This tool is designed for researchers and security analysts who want to map and monitor the exposure of open LLM endpoints on the internet.
 
@@ -8,12 +8,13 @@ This tool is designed for researchers and security analysts who want to map and 
 
 ## ✨ Features
 
--   **Shodan Scraping**: Finds hosts running Ollama on port `11434` using your Shodan session cookie.
--   **Database Storage**: Saves all discovered hosts and their models to a persistent SQLite database (`ollama_hosts.db`).
--   **Host Refresh**: Includes a script to periodically check the liveness of discovered hosts and update their model lists.
--   **API Service**: Provides a local Flask-based API to serve the collected data in JSON format.
--   **Web UI**: A simple web interface to visualize the live Ollama hosts and their models.
--   **Detailed Analysis**: Estimates host performance based on the models they are running.
+-   **Web-Based Management**: A fully interactive web UI to run discovery scans, refresh host data, and view results.
+-   **Interactive Data Table**: View all live hosts in a clean, sortable, and filterable table.
+-   **Dynamic Sorting**: Sort hosts by "Last Seen" or "Probable Performance" in both ascending and descending order.
+-   **Model Filtering**: Dynamically filter the host list to show only hosts running specific, user-selected models.
+-   **Background Task Execution**: Discovery and refresh scans are run as background processes, allowing the UI to remain responsive.
+-   **Database Storage**: Saves all discovered hosts, their country, and their models to a persistent SQLite database (`ollama_hosts.db`).
+-   **JSON API**: In addition to the UI, data is available at `/api/providers` for integration with other tools.
 
 ---
 
@@ -40,59 +41,35 @@ Install the required Python libraries using `pip`.
 pip install -r requirements.txt
 ```
 
-The core dependencies are `requests`, `beautifulsoup4`, and `Flask`.
+### 3. Running the Application
 
-### 3. Running the Scripts
+**A. Initialize the Database (First-Time Setup)**
 
-**A. Initialize the Database**
-
-Before running any other script, initialize the SQLite database:
+Before the first run, initialize the SQLite database:
 
 ```bash
 python database.py
 ```
 
-**B. Find New Hosts (`ollama-hunter.py`)**
+**B. Start the Web Service**
 
-This script scrapes Shodan for new Ollama instances and adds them to the database. It will prompt you to enter your Shodan `polito` cookie value.
-
-```bash
-# The script will prompt you for your Shodan cookie
-python ollama-hunter.py
-```
-
-**C. Refresh Existing Hosts (`refresh-hosts.py`)**
-
-This script iterates through the hosts in your database, checks if they are still online, and updates their model lists.
-
-```bash
-python refresh-hosts.py
-```
-
-**D. Run the Provider Service (`provider-service.py`)**
-
-This script starts a local web service that exposes the collected data via an API and a web UI.
+This single command starts the web application.
 
 ```bash
 python provider-service.py
 ```
 
-The API will be available at `http://0.0.0.0:5000/api/providers` and the Web UI at `http://0.0.0.0:5000/`.
+Navigate to **`http://127.0.0.1:5000`** in your web browser to access the main interface.
 
-### Utility Scripts
+### 4. Using the Web Interface
 
-**Interrogate a Single Host (`interrogate-host.py`)**
+-   **Run Ollama Hunter**: To discover new hosts, enter your Shodan `polito` cookie value in the input field and click "Run Ollama Hunter". The scan will start in the background. Refresh the page after a few moments to see new results.
+-   **Refresh Live Hosts**: Click the "Refresh Live Hosts" button to start a background task that checks the status of all hosts in the database.
+-   **Filter and Sort**: Use the filter dropdown to select one or more models and click "Filter". Click on the "Last Seen" or "Probable Performance" table headers to sort the results.
 
-This script queries a single Ollama host and saves its model details to the database.
+### Command-Line Utilities
 
-```bash
-python interrogate-host.py <IP_ADDRESS>
-```
+While the primary interface is now web-based, the following command-line utilities are still available:
 
-**Test a Model on a Host (`test-ollama-host.py`)**
-
-This script sends a predefined prompt to a specific model on a remote Ollama host to test its functionality.
-
-```bash
-python test-ollama-host.py <IP_ADDRESS> <MODEL_NAME>
-```
+-   **`interrogate-host.py <IP_ADDRESS>`**: Query a single host and save its details to the database.
+-   **`test-ollama-host.py <IP_ADDRESS> <MODEL_NAME>`**: Test a specific model on a remote host.
