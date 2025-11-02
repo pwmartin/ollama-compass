@@ -2,9 +2,8 @@
 
 import requests
 import argparse
-import csv
 import json
-import os
+import database
 
 # === SETTINGS ===
 DETAIL_TIMEOUT = 15  # timeout for the IP's /api/tags endpoint
@@ -83,45 +82,33 @@ def estimate_host_performance(detailed_models):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Interrogate a single Ollama host and append its model details to a CSV.",
+        description="Interrogate a single Ollama host and save its model details to the database.",
         formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("host", help="IP address or hostname of the Ollama server.")
     args = parser.parse_args()
 
-    csv_output_file = "ollama_models_details.csv"
-    
+    database.create_database() # Ensure db is created
+
     print(f"[+] Checking {args.host}...")
     detailed_models = fetch_models_from_ip(args.host)
 
     if detailed_models:
-        print(f"  [>] Found {len(detailed_models)} models on {args.host}")
         performance_guess = estimate_host_performance(detailed_models)
+        print(f"  [>] Found {len(detailed_models)} models on {args.host}")
         print(f"  [i] Probable performance: {performance_guess}")
 
-        # Check if file exists to determine if we need to write a header
-        file_exists = os.path.isfile(csv_output_file)
-
-        with open(csv_output_file, "a", newline="", encoding="utf-8") as csvfile:
-            fieldnames = ["ip_address", "model_name", "parameter_size", "quantization_level", "modified_at", "probable_performance"]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-            if not file_exists:
-                writer.writeheader()
-            
-            for model in detailed_models:
-                writer.writerow({
-                    "ip_address": args.host,
-                    "probable_performance": performance_guess,
-                    "model_name": model["name"],
-                    "parameter_size": model["parameter_size"],
-                    "quantization_level": model["quantization_level"],
-                    "modified_at": model["modified_at"],
-                })
+        host_id = database.add_or_update_host(args.host, performance_guess, is_alive=1)
+        database.clear_models_for_host(host_id)
+        database.add_models(host_id, detailed_models)
         
-        print(f"\n[✓] Done. Results for {args.host} appended to: {csv_output_file}")
+        print(f"\n[✓] Done. Results for {args.host} saved to the database.")
     else:
         print(f" [-] {args.host} has no models or is unreachable.")
+        host = database.get_host_by_ip(args.host)
+        if host:
+            database.mark_host_as_dead(host['id'])
+            print(f"  [!] Marked host {args.host} as dead in the database.")
 
 if __name__ == "__main__":
     main()
