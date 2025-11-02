@@ -38,7 +38,6 @@ def run_refresh():
 
     return redirect(url_for('index'))
 
-app = Flask(__name__)
 
 @app.route("/", methods=["GET"])
 def index():
