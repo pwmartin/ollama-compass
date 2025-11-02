@@ -1,2 +1,6 @@
-## ignore the output
+# Ignore LibreOffice/OpenOffice lock files
+.~lock.*#
+
+# Ignore generated output files
 ollama_models_details.csv
+ollama_hosts_with_*.txt
