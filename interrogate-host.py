@@ -81,16 +81,19 @@ def estimate_host_performance(detailed_models):
     return "Mid-Range"
 
 import subprocess
+import shlex
 
 def get_country_from_ip(ip):
     """Gets the country of an IP address using the whois command."""
     try:
-        # We pipe to grep to find the country line reliably
-        command = f"whois {ip} | grep -i country"
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
+        # Execute whois command without shell=True
+        command = ["whois", ip]
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
         if result.returncode == 0 and result.stdout:
-            # The output is usually in the format "Country: US", so we split and take the last part.
-            return result.stdout.strip().split(':')[-1].strip()
+            # Parse the whois output to find the country
+            for line in result.stdout.splitlines():
+                if "country:" in line.lower():
+                    return line.split(":")[-1].strip()
     except (subprocess.TimeoutExpired, FileNotFoundError):
         # Handle cases where whois isn't installed or times out
         return None
