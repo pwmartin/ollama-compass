@@ -7,9 +7,9 @@ import sys
 app = Flask(__name__)
 app.secret_key = 'supersecretkey' # Needed for flashing messages
 
-@app.route("/run-hunter", methods=["POST"])
-def run_hunter():
-    """Triggers the ollama-hunter.py script as a background process."""
+@app.route("/run-compass", methods=["POST"])
+def run_compass():
+    """Triggers the ollama-compass.py script as a background process."""
     cookie = request.form.get('shodan-cookie')
     if not cookie:
         flash("Shodan cookie is required!", "error")
@@ -19,10 +19,10 @@ def run_hunter():
         # Use Popen to run the script in the background
         # We pass the python executable from the current environment
         python_executable = sys.executable
-        subprocess.Popen([python_executable, "ollama-hunter.py", "--cookie", cookie])
-        flash("Ollama Hunter process started in the background. Refresh the page in a few moments to see results.", "success")
+        subprocess.Popen([python_executable, "ollama-compass.py", "--cookie", cookie])
+        flash("Ollama Compass process started in the background. Refresh the page in a few moments to see results.", "success")
     except Exception as e:
-        flash(f"Failed to start Ollama Hunter: {e}", "error")
+        flash(f"Failed to start Ollama Compass: {e}", "error")
     
     return redirect(url_for('index'))
 
